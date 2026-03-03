@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绝对色感挑战 - 20 题终结版</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --text-color: #1f2937;
+            --card-bg: #ffffff;
+            --primary: #4f46e5;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+            overflow: hidden;
+            /* 确保容器内内容整体居中 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 { 
+            margin: 0 0 1.5rem 0; 
+            font-size: 1.5rem; 
+            color: var(--primary); 
+            flex-shrink: 0;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-weight: 800; font-size: 1.1rem; color: var(--text-color); font-variant-numeric: tabular-nums; }
+        .stat-value.highlight { color: var(--primary); }
+        .stat-value.error { color: var(--error); }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Game Grid */
+        .game-area {
+            display: grid;
+            gap: 8px;
+            margin: 0 auto;
+            aspect-ratio: 1; 
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .color-box {
+            background-color: #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .color-box:active { transform: scale(0.96); }
+        .color-box.correct { animation: popGreen 0.4s forwards; }
+        .color-box.wrong { animation: shakeRed 0.4s forwards; opacity: 0.6; }
+
+        /* Floating Feedback (During Game) */
+        .feedback-overlay {
+            position: absolute;
+            top: 50%; 
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(255,255,255,0.95);
+            padding: 20px 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
+            white-space: nowrap;
+        }
+        .feedback-overlay.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        
+        /* 修复：结算页面的文字样式 */
+        .result-header-group {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .feedback-title { 
+            font-size: 1.8rem; 
+            font-weight: 800; 
+            margin: 0 0 8px 0; 
+            line-height: 1.2;
+            display: block;
+        }
+        
+        .feedback-sub { 
+            color: #6b7280; 
+            font-size: 1rem; 
+            margin: 0;
+            font-weight: 500;
+            display: block;
+        }
+
+        /* Result Screen */
+        .result-screen { 
+            display: none; 
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+        }
+        .result-screen.active { 
+            display: flex; 
+            animation: fadeIn 0.5s; 
+        }
+        
+        .score-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 0 auto 25px auto; /* Center horizontally */
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            align-items: center;
+        }
+        .score-row:last-child { margin-bottom: 0; }
+        .score-val { font-weight: bold; font-family: monospace; font-size: 1.1rem; }
+
+        .rank-badge {
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateY(0);
+            transition: transform 0.2s;
+        }
+        .rank-badge:hover { transform: translateY(-2px); }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.1s;
+            width: 100%;
+            margin-top: auto; /* Push to bottom if space allows */
+        }
+        .btn:hover { background: #4338ca; transform: translateY(-1px); }
+        .btn:active { transform: translateY(1px); }
+
+        @keyframes popGreen {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { transform: scale(1.05); background-color: var(--success) !important; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        @keyframes shakeRed {
+            0%, 100% { transform: translateX(0); background-color: var(--error) !important; }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 400px) {
+            .container { padding: 1.5rem 1rem; }
+            .stats-bar { gap: 5px; padding: 8px; }
+            .stat-value { font-size: 1rem; }
+            .feedback-title { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Game View -->
+    <div id="game-view">
+        <h1>🎨 绝对色感挑战</h1>
+        
+        <div class="stats-bar">
+            <div class="stat-box">
+                <span class="stat-label">进度</span>
+                <span class="stat-value highlight"><span id="current-q">1</span>/20</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">用时</span>
+                <span class="stat-value" id="timer">0.0s</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">错误</span>
+                <span class="stat-value error" id="error-count">0</span>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-fill" id="progress-bar"></div>
+        </div>
+
+        <div class="game-area" id="grid"></div>
+        
+        <p style="font-size: 0.8rem; color: #9ca3af; margin-top: 15px; margin-bottom: 0;">找出颜色不同的方块</p>
+    </div>
+
+    <!-- Result View -->
+    <div id="result-view" class="result-screen">
+        <h1 style="margin-bottom: 10px;">🏁 挑战结束</h1>
+        
+        <!-- 修复：将标题和描述包裹在一个居中的组里 -->
+        <div class="result-header-group">
+            <div class="feedback-title" id="final-rank-title" style="position: static; transform: none; opacity: 1; box-shadow: none; padding: 0; background: transparent; color: var(--text-color);">色感大师</div>
+            <div class="feedback-sub" id="final-rank-desc">超越 90% 的用户</div>
+        </div>
+
+        <div class="score-card">
+            <div class="score-row">
+                <span>总耗时</span>
+                <span class="score-val" id="res-time">--</span>
+            </div>
+            <div class="score-row">
+                <span>错误次数</span>
+                <span class="score-val" style="color:var(--error)" id="res-errors">--</span>
+            </div>
+            <div class="score-row">
+                <span>平均每题耗时</span>
+                <span class="score-val" id="res-avg">--</span>
+            </div>
+            <div style="text-align:center; margin-top:20px;">
+                <span id="rank-badge" class="rank-badge">S</span>
+            </div>
+        </div>
+
+        <button class="btn" onclick="restartGame()">再玩一次</button>
+    </div>
+
+    <!-- Floating Feedback (Game Only) -->
+    <div id="float-feedback" class="feedback-overlay">
+        <div class="feedback-title" id="fb-title" style="font-size: 1.4rem; margin:0;">正确!</div>
+        <div class="feedback-sub" id="fb-sub" style="font-size: 0.9rem; margin-top:4px;">继续保持</div>
+    </div>
+</div>
+
+<script>
+    const TOTAL_QUESTIONS = 20;
+    let currentQ = 1;
+    let errors = 0;
+    let startTime = 0;
+    let timerInterval;
+    let isLocked = false; 
+
+    // DOM
+    const gridView = document.getElementById('game-view');
+    const resultView = document.getElementById('result-view');
+    const gridEl = document.getElementById('grid');
+    const elCurrentQ = document.getElementById('current-q');
+    const elTimer = document.getElementById('timer');
+    const elErrors = document.getElementById('error-count');
+    const elProgress = document.getElementById('progress-bar');
+    
+    const floatFb = document.getElementById('float-feedback');
+    const fbTitle = document.getElementById('fb-title');
+    const fbSub = document.getElementById('fb-sub');
+
+    function restartGame() {
+        currentQ = 1;
+        errors = 0;
+        isLocked = false;
+        
+        gridView.style.display = 'block';
+        resultView.classList.remove('active');
+        // 重置 flex 方向以确保游戏界面正常
+        gridView.style.display = 'block'; 
+        
+        elErrors.innerText = '0';
+        elCurrentQ.innerText = '1';
+        elProgress.style.width = '0%';
+        
+        startTimer();
+        renderLevel();
+    }
+
+    function startTimer() {
+        startTime = Date.now();
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const delta = (Date.now() - startTime) / 1000;
+            elTimer.innerText = delta.toFixed(1) + 's';
+        }, 100);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        return ((Date.now() - startTime) / 1000).toFixed(2);
+    }
+
+    function getDifficulty(q) {
+        if (q <= 5) return { size: 2, diff: 18 };
+        if (q <= 10) return { size: 3, diff: 12 };
+        if (q <= 15) return { size: 4, diff: 7 };
+        return { size: 5, diff: 4 };
+    }
+
+    function renderLevel() {
+        isLocked = false;
+        gridEl.innerHTML = '';
+        elCurrentQ.innerText = currentQ;
+        elProgress.style.width = `${((currentQ - 1) / TOTAL_QUESTIONS) * 100}%`;
+
+        const config = getDifficulty(currentQ);
+        const total = config.size * config.size;
+        
+        gridEl.style.gridTemplateColumns = `repeat(${config.size}, 1fr)`;
+
+        const h = Math.floor(Math.random() * 360);
+        const s = Math.floor(Math.random() * 30) + 70; 
+        const l = Math.floor(Math.random() * 40) + 30;
+        
+        const baseColor = `hsl(${h}, ${s}%, ${l}%)`;
+        const targetColor = `hsl(${h}, ${s}%, ${l + config.diff}%)`;
+
+        const targetIdx = Math.floor(Math.random() * total);
+
+        for (let i = 0; i < total; i++) {
+            const box = document.createElement('div');
+            box.className = 'color-box';
+            box.style.backgroundColor = (i === targetIdx) ? targetColor : baseColor;
+            box.dataset.isTarget = (i === targetIdx);
+            box.onclick = () => handleBoxClick(box, config.diff);
+            gridEl.appendChild(box);
+        }
+    }
+
+    function handleBoxClick(box, diff) {
+        if (isLocked) return;
+
+        if (box.dataset.isTarget === "true") {
+            isLocked = true;
+            box.classList.add('correct');
+            showFloatFeedback(true, diff);
+            
+            setTimeout(() => {
+                if (currentQ >= TOTAL_QUESTIONS) {
+                    endGame();
+                } else {
+                    currentQ++;
+                    renderLevel();
+                }
+            }, 600);
+        } else {
+            errors++;
+            elErrors.innerText = errors;
+            box.classList.add('wrong');
+            showFloatFeedback(false, diff);
+        }
+    }
+
+    function showFloatFeedback(isCorrect, diff) {
+        floatFb.classList.add('show');
+        if (isCorrect) {
+            fbTitle.innerText = "敏锐! 🎉";
+            fbTitle.style.color = "var(--success)";
+            fbSub.innerText = `色差识别：${diff}%`;
+        } else {
+            fbTitle.innerText = "再看仔细点 👀";
+            fbTitle.style.color = "var(--error)";
+            fbSub.innerText = "错误次数 +1";
+        }
+
+        setTimeout(() => {
+            floatFb.classList.remove('show');
+        }, 500);
+    }
+
+    function endGame() {
+        const totalTime = stopTimer();
+        
+        // 切换视图
+        gridView.style.display = 'none';
+        resultView.classList.add('active');
+        // 确保 resultView 是 flex 布局以支持内部居中
+        resultView.style.display = 'flex'; 
+
+        const avgTime = (parseFloat(totalTime) / TOTAL_QUESTIONS).toFixed(2);
+        
+        document.getElementById('res-time').innerText = totalTime + 's';
+        document.getElementById('res-errors').innerText = errors;
+        document.getElementById('res-avg').innerText = avgTime + 's';
+
+        let rank = "C";
+        let title = "新手";
+        let desc = "多加练习会更好";
+        let color = "#9ca3af";
+
+        if (errors === 0 && parseFloat(totalTime) < 35) {
+            rank = "S+"; title = "色觉之神"; desc = "完美！人类极限！"; color = "#fbbf24";
+        } else if (errors <= 2 && parseFloat(totalTime) < 45) {
+            rank = "S"; title = "色感大师"; desc = "超越 95% 的用户"; color = "#f59e0b";
+        } else if (errors <= 5) {
+            rank = "A"; title = "色彩专家"; desc = "非常优秀的观察力"; color = "#10b981";
+        } else if (errors <= 10) {
+            rank = "B"; title = "普通观察者"; desc = "还可以，但有提升空间"; color = "#3b82f6";
+        } else {
+            rank = "C"; title = "需要休息"; desc = "是不是屏幕太亮了？"; color = "#ef4444";
+        }
+
+        const badge = document.getElementById('rank-badge');
+        badge.innerText = rank;
+        badge.style.backgroundColor = color;
+        
+        const finalTitle = document.getElementById('final-rank-title');
+        finalTitle.innerText = title;
+        finalTitle.style.color = color;
+        
+        document.getElementById('final-rank-desc').innerText = desc;
+    }
+
+    // Start first game
+    restartGame();
+
+</script>
+</body>
+</html>
