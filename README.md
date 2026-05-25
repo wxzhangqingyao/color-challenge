@@ -19,7 +19,7 @@
 
 该项目已部署到 GitHub Pages，您可以通过以下链接访问：
 
-[绝对色感挑战](https://<your-username>.github.io/color-challenge/)
+[绝对色感挑战](https://wxzhangqingyao.github.io/color-challenge/)
 
 ## 本地运行
 
